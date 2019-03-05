@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<package>
+  <name>doobot</name>
+  <version>0.0.0</version>
+  <description>The doobot package</description>
+
+  <maintainer email="rgb@frontier.com">Bob Bond</maintainer>
+
+  <license>BSD</license>
+  <run_depend>message_runtime</run_depend>
+  <run_depend>rospy</run_depend>
+  <run_depend>game</run_depend>
+  <build_depend>game</build_depend>
+  <buildtool_depend>catkin</buildtool_depend>
+</package>

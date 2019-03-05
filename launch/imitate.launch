@@ -1,0 +1,21 @@
+<launch>
+
+<!-- Camera Node -->
+  <node name="xiq" pkg="xiq" type="xiq" output="screen" >
+  <param name="frame_rate" type="int" value="30" /> 
+  <rosparam param="camera_param_file_paths" subst_value="true">[$(find xiq)/config/ximea1.yaml]</rosparam>
+  </node>
+
+  <node name="score" pkg="score" type="score" output="screen" >
+  </node>
+
+  <node name="archive" pkg="game" type="archive.py" output="screen" >
+  </node>
+
+  <node name="doobot" pkg="doobot" type="doobot_node.py" args="-t" output="screen" >
+  </node>
+
+  <node name="implay" pkg="implay" type="implay" output="screen" >
+  </node>
+
+</launch>

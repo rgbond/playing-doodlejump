@@ -1,0 +1,2 @@
+model_checkpoint_path: "/caffe/ros/src/implay/scripts/snapshots/net1i"
+all_model_checkpoint_paths: "/caffe/ros/src/implay/scripts/snapshots/net1i"

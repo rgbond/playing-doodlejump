@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<package>
+  <name>score</name>
+  <version>0.0.0</version>
+  <description>Pull scores out of a Doodle Jump screen</description>
+  <author>Bob Bond</author>
+  <maintainer email="r.bond@frontier.com">Bob Bond</maintainer>
+  <license>Apache 2.0</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>std_msgs</build_depend>
+  <build_depend>image_transport</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>message_generation</build_depend>
+
+  <run_depend>message_runtime</run_depend>
+  <run_depend>opencv2</run_depend>
+  <run_depend>image_transport</run_depend>
+  <run_depend>sensor_msgs</run_depend>
+  <run_depend>std_msgs</run_depend>
+</package>

@@ -1,0 +1,15 @@
+<launch>
+
+<!-- Camera Node -->
+  <node name="xiq" pkg="xiq" type="xiq" output="screen" >
+  <param name="frame_rate" type="int" value="30" /> 
+  <rosparam param="camera_param_file_paths" subst_value="true">[$(find xiq)/config/ximea1.yaml]</rosparam>
+  </node>
+
+  <node name="viz" pkg="viz" type="viz" output="screen" >
+  <!-- 
+  <node name="viz" pkg="viz" type="viz" args="-s /home/rgb/frames" output="screen" >
+  -->
+  </node>
+
+</launch>
