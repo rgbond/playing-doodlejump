@@ -229,7 +229,7 @@ class global_state(object):
             return
         action = key2action[keycode]
         if action >= 0:
-            print "key", action
+            print action
             self.send_action(action)
             self.supress_keys = 3
             self.cdb.update_action(action, frame/self.skip)
@@ -333,6 +333,10 @@ class global_state(object):
             elif self.last_train_state == 1:
                 print "Training done"
                 self.training_running = False
+                self.rec = True
+                self.frame_count = 0
+                self.send_action(actions['start'])
+                self.cdb.update_action(actions['start'], self.last_frame/self.skip)
         if (self.active and self.ih.is_end()) or self.frame_count == 1500:
             self.active = False
             self.rec = False
@@ -360,7 +364,8 @@ class global_state(object):
             call("sync")
             print "Commit done"
             self.send_train_start()
-        elif not self.active and not self.ih.is_end():
+            self.training_running = True
+        elif not self.active and not self.ih.is_end() and not self.training_running:
             self.active = True
 
 def image_callback(msg, args):
@@ -376,8 +381,12 @@ def score_callback(msg, args):
 def action_callback(msg, args):
     gs = args[0]
     if gs.recording():
-        print "implay:", msg.action
-        gs.save_implay_action(msg.action, msg.fseq)
+        action = msg.action
+        if msg.action_src == 1:
+            print "        ", action
+        else:
+            print "    ", action
+        gs.save_implay_action(action, msg.fseq)
 
 def play_ctl_callback(msg, args):
     gs = args[0]

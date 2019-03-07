@@ -49,6 +49,7 @@ get_rollout_frame_score_action_sql = 'SELECT frame, score, action FROM frames WH
 get_rollout_fn_action_sql = 'SELECT file_name, action FROM frames WHERE rollout = ? ORDER BY frame'
 get_rollout_fn_action_rew_sql = 'SELECT file_name, action, reward FROM frames WHERE rollout = ? ORDER BY frame'
 get_rollout_fn_reward_sql = 'SELECT file_name, reward FROM frames WHERE rollout = ? ORDER BY frame'
+get_max_score_rollout_sql = 'SELECT max(score), rollout from frames group by rollout'
 
 insert_rollout_rec_sql = 'INSERT INTO rollouts(r, rewards, used) VALUES(?, 0, 0)'
 delete_rollout_rec_sql = 'DELETE FROM rollouts WHERE r=?'
@@ -114,6 +115,10 @@ class db(object):
 
     def get_rollout_frame_score_action(self, r):
         self.c.execute(get_rollout_frame_score_action_sql, (r,))
+        return self.c.fetchall()
+
+    def get_max_score_rollout(self):
+        self.c.execute(get_max_score_rollout_sql)
         return self.c.fetchall()
 
     def get_rollout(self):

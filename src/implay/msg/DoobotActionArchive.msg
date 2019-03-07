@@ -7,5 +7,6 @@
 
 Header header
 
-uint32 action    # Action to take
-uint32 fseq      # Frame
+uint32 action      # Action to take
+uint32 action_src  # 1 = argmax, 2 = dist
+uint32 fseq        # Frame

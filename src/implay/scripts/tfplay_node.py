@@ -117,9 +117,10 @@ class image_handler(object):
     def have_image(self):
         return self.have_img
 
-def send_move(pub, action, frame):
+def send_move(pub, action, action_src, frame):
     move_msg = DoobotActionArchive()
     move_msg.action = action
+    move_msg.action_src = action_src
     move_msg.fseq = frame
     pub.publish(move_msg)
 
@@ -160,7 +161,7 @@ def main():
     rospy.Subscriber("game/PlayCtl", PlayCtl, play_ctl_callback, (tfh, ))
     tfh.system_up()
     send_play_ctl(ctl_pub, tf_state_online)
-    eps = 0.8
+    eps = 0.6
     while not rospy.is_shutdown():
         if ih.have_img:
             fn, img1, img2 = ih.retrieve_image()
@@ -170,9 +171,11 @@ def main():
             # print "tfplay: dist", pdist
             if random.random() < eps:
                 action = np.argmax(actions)
+                action_src = 1
             else:
                 action = np.random.choice(len(dist), 1, p=dist)[0]
-            send_move(pub, action, fn)
+                action_src = 2
+            send_move(pub, action, action_src, fn)
         if tfh.time_to_train:
             send_play_ctl(ctl_pub, tf_state_training)
             tfh.train()

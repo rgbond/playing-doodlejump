@@ -8,19 +8,24 @@ def select_training_set():
     update_rewards()
     fdb = db("/caffe/ros/db/frames.db", False)
     training_set = []
-    old_rollouts = fdb.list_used_rollouts(1)
-    shuffle(old_rollouts)
     new_rollouts = fdb.list_used_rollouts(0)
+    new_rollouts = [v[0] for v in new_rollouts]
     nlen = len(new_rollouts)
+    # Find the top 20 highest scoring old rollouts
+    old_rollouts = fdb.get_max_score_rollout()
+    old_rollouts.sort(reverse=True)
+    old_rollouts = [v[1] for v in old_rollouts]
+    old_rollouts = old_rollouts[:50]
+    shuffle(old_rollouts)
     if nlen != 0:
         # If we have new rollouts mix in twice as many old
         src_set = new_rollouts + old_rollouts[:nlen*2]
         fdb.update_rollout_rec_used()
         fdb.commit()
     else:
-        # Otheriwse pick a few old rollouts
-        src_set = old_rollouts[:6]
-    for (r, ) in src_set:
+        # Otherwise just use 3 of them
+        src_set = old_rollouts[:3]
+    for r in src_set:
         rollout = fdb.get_rollout_fn_action_rew(r)
         if len(rollout) == 0:
             print "rollout", r, "is empty"
