@@ -13,7 +13,7 @@ def find_port(motor):
         motor.set_port(devices[0])
     elif port_count == 0:
         print "no tty ports found!"
-        print "check for /dev/ttyUSB*"
+        print "check for /dev/ttyACM*"
         exit(1)
     else:
         print "too many USB ports!"
