@@ -344,7 +344,10 @@ class global_state(object):
             if self.ih.is_end():
                 self.cdb.update_score(-1, self.sframe)
             ct.log('commit start')
-            print "Stopped recording at", self.frame_count
+            if self.ih.is_end():
+                print "Detected end at", self.frame_count
+            else:
+                print "Max frames stored:", self.frame_count
             self.frame_count = 0
             self.cdb.insert_rollout_rec()
             self.cdb.commit()

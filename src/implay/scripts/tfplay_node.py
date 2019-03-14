@@ -94,6 +94,7 @@ class image_handler(object):
             return
         self.tlock.acquire(True)
         img = ros_numpy.numpify(msg)
+        img = img[...,::-1]
         if self.img_count == 0:
             self.img1 = cv2.resize(img, small_size)
             self.fn1 = msg.header.seq
@@ -161,7 +162,7 @@ def main():
     rospy.Subscriber("game/PlayCtl", PlayCtl, play_ctl_callback, (tfh, ))
     tfh.system_up()
     send_play_ctl(ctl_pub, tf_state_online)
-    eps = 0.6
+    eps = 0.2
     while not rospy.is_shutdown():
         if ih.have_img:
             fn, img1, img2 = ih.retrieve_image()

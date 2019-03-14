@@ -13,6 +13,7 @@ def select_training_set():
     nlen = len(new_rollouts)
     # Find the top 20 highest scoring old rollouts
     old_rollouts = fdb.get_max_score_rollout()
+    scores = [v[0] for v in old_rollouts]
     old_rollouts.sort(reverse=True)
     old_rollouts = [v[1] for v in old_rollouts]
     old_rollouts = old_rollouts[:50]
@@ -25,6 +26,8 @@ def select_training_set():
     else:
         # Otherwise just use 3 of them
         src_set = old_rollouts[:3]
+    print "sts: avg max score", round(np.mean(scores))
+    print "sts: src_set", src_set
     for r in src_set:
         rollout = fdb.get_rollout_fn_action_rew(r)
         if len(rollout) == 0:
@@ -67,10 +70,13 @@ def filter_scores(x, ri):
                 last_dt = dt
     return y
 
-def update_rewards():
+def update_rewards(all_rollouts=False):
     fdb = db("/caffe/ros/db/frames.db", False)
     fn_idx = 1
-    rollouts = fdb.list_unrewarded_rollouts()
+    if all_rollouts:
+        rollouts = fdb.list_rollouts()
+    else:
+        rollouts = fdb.list_unrewarded_rollouts()
     tr = 0.0
     rc = 0
     for (r, ) in rollouts:
@@ -91,7 +97,7 @@ def update_rewards():
         if score >= 0:
             reward = 42.0
         else:
-            reward = -20.0
+            reward = -40.0
             fdb.update_reward(int(round(reward)), frame, r)
         skip_to_action = True
         while ri >= ri0:
