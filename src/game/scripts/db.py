@@ -45,6 +45,7 @@ dump_sql = 'SELECT * FROM frames'
 list_rollouts_sql = 'SELECT DISTINCT(rollout) FROM frames WHERE in_use == 1 ORDER BY rollout;'
 get_rollout_fn_score_sql = 'SELECT file_name, score FROM frames WHERE rollout = ? ORDER BY frame'
 get_rollout_fn_score_action_sql = 'SELECT file_name, score, action FROM frames WHERE rollout = ? ORDER BY frame'
+get_rollout_frame_score_sql = 'SELECT frame, score FROM frames WHERE rollout = ? ORDER BY frame'
 get_rollout_frame_score_action_sql = 'SELECT frame, score, action FROM frames WHERE rollout = ? ORDER BY frame'
 get_rollout_fn_action_sql = 'SELECT file_name, action FROM frames WHERE rollout = ? ORDER BY frame'
 get_rollout_fn_action_rew_sql = 'SELECT file_name, action, reward FROM frames WHERE rollout = ? ORDER BY frame'
@@ -107,6 +108,10 @@ class db(object):
 
     def get_rollout_fn_reward(self, r):
         self.c.execute(get_rollout_fn_reward_sql, (r,))
+        return self.c.fetchall()
+
+    def get_rollout_frame_score(self, r):
+        self.c.execute(get_rollout_frame_score_sql, (r,))
         return self.c.fetchall()
 
     def get_rollout_fn_score_action(self, r):

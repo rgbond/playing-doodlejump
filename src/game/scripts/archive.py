@@ -19,6 +19,7 @@ from implay.msg import DoobotActionArchive
 
 from db import db
 from ctimers import ctimer
+from filter_scores import filter_scores
 tick_dt = 1.0/100.0
 ct = ctimer()
 # Note should be cols, rows for resize
@@ -74,7 +75,8 @@ class db_cache(db):
         for a, fn in self.actions:
             super(db_cache, self).update_action(a, fn)
         self.actions = []
-        for s, fn in self.scores:
+        filtered_scores = filter_scores(self.scores)
+        for s, fn in filtered_scores:
             super(db_cache, self).update_score(s, fn)
         self.scores = []
         self.have_data = False
