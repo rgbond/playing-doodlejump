@@ -109,9 +109,8 @@ int main(int argc, char* argv[])
 
     ros::Subscriber sub = nh.subscribe("camera1/image_raw", 2, image_callback);
 
-    const char *deploy = "/caffe/doodle/doonet/doonet/net10_deploy.prototxt";
-    // const char *model =  "/caffe/doodle/doonet/snapshot/keep/net10_1684000.caffemodel";
-    const char *model =  "/caffe/doodle/doonet/snapshot/keep/net10_ft1_1908000.caffemodel";
+    const char *deploy = "/caffe/ros/src/score/src/model/net10_deploy.prototxt";
+    const char *model =  "/caffe/ros/src/score/src/model/net10_ft1_1908000.caffemodel";
     scoreNet *net = scoreNet::Create(deploy, model);
 
     while (ros::ok()) {
