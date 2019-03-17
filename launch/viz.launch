@@ -8,7 +8,7 @@
 
   <node name="viz" pkg="viz" type="viz" output="screen" >
   <!-- 
-  <node name="viz" pkg="viz" type="viz" args="-s /home/rgb/frames" output="screen" >
+  <node name="viz" pkg="viz" type="viz" args="-s /caffe/rgb/frames" output="screen" >
   -->
   </node>
 

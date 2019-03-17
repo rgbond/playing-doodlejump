@@ -103,7 +103,7 @@ class image_handler(object):
         self.have_img = True
         self.tlock.release()
         self.chk_end()
-        cv2.imshow("chk_end", self.img)
+        cv2.imshow("DoodleJump", self.img)
         keycode = cv2.waitKey(20)
         keycode &= 0xff
         ct.log("imshow")
@@ -129,9 +129,16 @@ class image_handler(object):
     def chk_end(self):
         grass1 = self.img[442:460, 90:100]
         grass2 = self.img[442:460, 230:240]
+        letters = self.img[225:249, 146:180]
         tot1 = grass1.sum()
         tot2 = grass2.sum()
-        self.at_end = tot1 < 10000 or tot2 < 10000
+        tot3 = abs(letters.sum() // 1000 - 275)
+        c1 = tot1 < 10000
+        c2 = tot2 < 10000
+        c3 = tot3 < 10
+        if (c1 or c2) and not c3:
+            print "tot3:", tot3
+        self.at_end = c3 and (c1 or c2)
 
     def is_end(self):
         return self.at_end
@@ -155,6 +162,7 @@ start_recording = -1
 stop_recording = -2
 quit = -3
 start_training = -4
+supress_implay = -5
 
 key2action = {
             ord('w'): actions['fire'],
@@ -165,6 +173,7 @@ key2action = {
             ord('i'): start_recording,
             ord('t'): stop_recording,
             ord('g'): start_training,
+            ord('p'): supress_implay,
             ord('q'): quit,
           }
 
@@ -193,7 +202,7 @@ class global_state(object):
         self.do_recenter()
         self.imwrite_cache = []
         self.tlock = threading.Lock()
-        self.supress_keys = 0
+        self.supress_keys = False
         self.last_train_state = -1 # unknown
         self.training_running = False
         self.play_ctl_msg_received = False
@@ -233,8 +242,7 @@ class global_state(object):
         if action >= 0:
             print action
             self.send_action(action)
-            self.supress_keys = 3
-            self.cdb.update_action(action, frame/self.skip)
+            self.cdb.update_action(action, frame//self.skip)
         elif action == start_recording:
             # self.send_action(actions['start'], enable=enables['enable'])
             self.rec = True
@@ -247,20 +255,23 @@ class global_state(object):
         elif action == quit:
             # SIGINT == 2.
             os.kill(os.getppid(), 2)
+        elif action == supress_implay:
+            self.supress_keys = not self.supress_keys
+            print "self.supress_keys:", self.supress_keys
+        else:
+            print "keycode:", keycode, "action:", action
         ct.log('done')
 
     def recording(self):
         return self.rec
 
     def save_score(self, score, frame):
-        self.cdb.update_score(score, frame/self.skip)
+        self.cdb.update_score(score, frame//self.skip)
 
     def save_implay_action(self, action, frame):
-        if self.supress_keys > 0:
-            self.supress_keys -= 1
-        else:
+        if not self.supress_keys:
             self.send_action(action)
-            self.cdb.update_action(action, frame/self.skip)
+            self.cdb.update_action(action, frame//self.skip)
 
     def do_recenter(self):
         global ct
@@ -309,7 +320,7 @@ class global_state(object):
         ct.log('start')
         if self.ih.have_image():
             self.last_frame, self.last_img = self.ih.retrieve_image()
-            self.sframe = self.last_frame/self.skip
+            self.sframe = self.last_frame//self.skip
             self.ih.image_processed();
             ct.log('retrieve')
             if self.rec and self.last_frame % self.skip == 0:
@@ -338,7 +349,7 @@ class global_state(object):
                 self.rec = True
                 self.frame_count = 0
                 self.send_action(actions['start'])
-                self.cdb.update_action(actions['start'], self.last_frame/self.skip)
+                self.cdb.update_action(actions['start'], self.last_frame//self.skip)
         if (self.active and self.ih.is_end()) or self.frame_count == 1500:
             self.active = False
             self.rec = False

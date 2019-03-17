@@ -65,6 +65,8 @@ class tf_handler(object):
                 lp = round(loss, 3)
                 ap = round(acc * 100, 1)
                 print "Batch", i, "of", nbatches, "loss:", lp, "acc:", ap
+        if i % 10 != 0:
+            print "Batch", nbatches, "of", nbatches, "loss:", lp, "acc:", ap
         self.dn.save()
         print "Save done"
         self.state = tf_state_online
