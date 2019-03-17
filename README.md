@@ -53,5 +53,5 @@ Viz is a simple module used to display images from the camera in a bounding
 box used to manually align, focus, zoom and set the aperture on the camera. 
 
 Archiving a full ROS workspace is not ideal. It may make sense to break
-out each of the major subcomponents into thier own tree at some point
+out each of the major subcomponents into their own tree at some point
 in the future as the project matures.
