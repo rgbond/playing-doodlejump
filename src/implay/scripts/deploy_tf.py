@@ -4,9 +4,9 @@ from PIL import Image
 
 class deploy(object):
     def __init__(self):
-        self.bot = tf.placeholder("float", [None, 128, 80, 6])
-        top = self.conv(self.bot, 5, 5, 64, 1, 1, padding='VALID', relu=False, name='conv_a5')
-        top = self.conv(top, 1, 1, 32, 1, 1, relu=False, name='conv_a1')
+        self.bot = tf.placeholder("float", [None, 128, 80, 9])
+        top = self.conv(self.bot, 5, 5, 96, 1, 1, padding='VALID', relu=False, name='conv_a5')
+        top = self.conv(top, 1, 1, 48, 1, 1, relu=False, name='conv_a1')
         top = self.conv(top, 5, 5, 64, 2, 2, padding='VALID', name='conv_b5')
         top = self.conv(top, 1, 1, 32, 1, 1, relu=False, name='conv_b1')
         top = self.conv(top, 3, 3, 64, 1, 1, name='conv_c3')
@@ -28,6 +28,7 @@ class deploy(object):
         self.accuracy = tf.reduce_mean(tf.cast(self.correct_prediction, tf.float32))
         init = tf.global_variables_initializer()
         self.sess.run(init)
+        self.snapshots = "snapshots/net2a"
 
     def save(self):
         self.saver.save(self.sess, self.snapshots) 
@@ -99,18 +100,16 @@ class deploy(object):
         img *= 0.00392157
         return img
 
-    def format_images(self, img1, img2):
-        img1 = self.format_image(img1)
-        img2 = self.format_image(img2)
-        imgs = np.concatenate((img1, img2), 2)
-        imgs = imgs.reshape(1, 128, 80, 6)
-        return imgs
+    def format_images(self, imgs):
+        fimgs = [self.format_image(img) for img in imgs]
+        cimgs = np.concatenate(fimgs, 2)
+        cimgs = cimgs.reshape(1, 128, 80, 3*len(imgs))
+        return cimgs
 
     def load_image(self, im_fn):
         im = Image.open(im_fn)
         return self.format_image(im)
 
-    def load_images(self, im1_fn, im2_fn):
-        img1 = Image.open(im1_fn)
-        img2 = Image.open(im2_fn)
-        return self.format_images(img1, img2)
+    def load_images(self, fns):
+        imgs = [Image.open(fn) for fn in fns]
+        return self.format_images(imgs)

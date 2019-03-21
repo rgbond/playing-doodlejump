@@ -4,14 +4,14 @@ import numpy as np
 from random import shuffle
 from db import db
 
-def select_training_set():
+def select_training_set(nimgs):
     update_rewards()
     fdb = db("/caffe/ros/db/frames.db", False)
     training_set = []
     new_rollouts = fdb.list_used_rollouts(0)
     new_rollouts = [v[0] for v in new_rollouts]
     nlen = len(new_rollouts)
-    # Find the top 30 highest scoring old rollouts
+    # Find the 30 highest scoring old rollouts
     old_rollouts = fdb.get_max_score_rollout()
     scores = [v[0] for v in old_rollouts]
     old_rollouts.sort(reverse=True)
@@ -29,17 +29,18 @@ def select_training_set():
     print "sts: src_set", src_set
     print "sts: avg max score", round(np.mean(scores))
     with open("maxlog.txt", "a") as maxlog:
-        maxlog.write("{0} {1}\n".format(new_rollouts[0], round(np.mean(scores))))
+        maxlog.write("{0} {1}\n".format(src_set[0], round(np.mean(scores))))
     for r in src_set:
         rollout = fdb.get_rollout_fn_action_rew(r)
         if len(rollout) == 0:
             print "rollout", r, "is empty"
             continue
-        last_fn, last_action, last_rew = rollout[0]
-        for fn, action, reward in rollout[1:-1]:
+        old_fns = [fn for fn, a, rew in rollout[:nimgs-1]]
+        for fn, action, reward in rollout[nimgs-1:-1]:
             if reward >= 0:
-                training_set.append((last_fn, fn, action))
-            last_fn = fn
+                training_set.append((old_fns + [fn], action))
+            old_fns = old_fns[1:]
+            old_fns.append(fn)
     shuffle(training_set)
     return training_set
 
@@ -55,39 +56,41 @@ def update_rewards(all_rollouts=False):
     for (r, ) in rollouts:
         rollout = fdb.get_rollout_frame_score_action(r)
         scores = [score for frame, score, action in rollout]
+        frames = [frame for frame, score, action in rollout]
         ri_max = len(scores)
         ri0 = 1
         if ri0 >= ri_max:
             continue
-        ri = ri_max-1
         decay = 0.90
-        fs = scores[ri]
-        last_fs = fs
-        frame, score, action = rollout[ri]
+        ri = ri_max-1
         # last score is -1 if fail
-        if score >= 0:
+        if scores[ri] >= 0:
             reward = 42.0
         else:
-            reward = -40.0
-            fdb.update_reward(int(round(reward)), frame, r)
-        skip_to_action = True
-        while ri >= ri0:
+            reward = -300.0
+        fdb.update_reward(int(reward), frames[ri], r)
+        # skip over the block of identical scores at the end
+        ri -= 1
+        final_score = scores[ri]
+        fdb.update_reward(int(reward), frames[ri], r)
+        ri -= 1
+        while scores[ri] == final_score:
+            fdb.update_reward(int(reward), frames[ri], r)
             ri -= 1
-            fs = scores[ri]
-            frame, score, action = rollout[ri]
-            if skip_to_action:
-                skip_to_action = action == 0
-            else:
-                dfs = last_fs - fs
-                reward = dfs + reward * decay
-            # print r, ri, fs, action, round(reward, 0)
-            fdb.update_reward(int(round(reward)), frame, r)
+        # do the rest
+        last_fs = final_score
+        while ri >= ri0:
+            dfs = last_fs - scores[ri]
+            reward = dfs + reward * decay
+            # print r, ri, scores[ri], action, round(reward, 0)
+            fdb.update_reward(int(round(reward)), frames[ri], r)
             tr += reward
             rc += 1
-            last_fs = fs
+            last_fs = scores[ri]
+            ri -= 1
         fdb.update_rollout_rec_reward(r)
     fdb.commit()
 
 # Some test code
 if __name__ == '__main__':
-    print select_training_set()
+    print select_training_set(3)

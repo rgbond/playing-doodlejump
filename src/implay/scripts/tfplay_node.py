@@ -25,6 +25,9 @@ tf_state_startup = 0
 tf_state_online = 1
 tf_state_training = 2
 
+# Number of images used in an inference
+nimgs = 3
+
 class tf_handler(object):
     def __init__(self, prefix):
         self.time_to_train = False
@@ -33,21 +36,21 @@ class tf_handler(object):
         self.dn.restore(prefix)
         self.batch_size = 10
 
-    def process_imgs(self, fn, img1, img2):
-        imgs = self.dn.format_images(img1, img2)
-        values = self.dn.run(imgs)
+    def process_imgs(self, imgs):
+        fimgs = self.dn.format_images(imgs)
+        values = self.dn.run(fimgs)
         return values[0]
 
     def make_batch(self, items, index):
         batch_x = []
         batch_y = []
         for i in range(self.batch_size):
-            fn1, fn2, l = items[index]
+            fns, l = items[index]
             index = (index + 1) % len(items)
             label = np.zeros(5, dtype = np.float)
             label[l] = 1.0
             batch_y.append(label)
-            imgs = self.dn.load_images(fn1, fn2)
+            imgs = self.dn.load_images(fns)
             batch_x.append(imgs)
         batch_x = np.concatenate(batch_x, axis=0)
         batch_y = np.array(batch_y)
@@ -55,7 +58,7 @@ class tf_handler(object):
 
     def train(self):
         self.state = tf_state_training
-        training_set = select_training_set()
+        training_set = select_training_set(nimgs)
         index = 0
         nbatches = (len(training_set) + self.batch_size)//self.batch_size
         for i in range(nbatches):
@@ -83,42 +86,35 @@ class tf_handler(object):
 class image_handler(object):
     def __init__(self):
         self.tlock = threading.Lock()
-        self.img_count = 0
-        self.have_img = False
+        self.cur_imgs = []
+        self.have_imgs = False 
 
     def acquire_image(self, msg):
         global ct
         if msg.header.seq % 3 != 0:
             return
-        if self.img_count == 2:
+        if len(self.cur_imgs) == nimgs:
             print "tfplay frame dropped", msg.header.seq
-            self.img_count = 0
+            self.have_imgs = False
+            self.cur_imgs = []
             return
         self.tlock.acquire(True)
         img = ros_numpy.numpify(msg)
         img = img[...,::-1]
-        if self.img_count == 0:
-            self.img1 = cv2.resize(img, small_size)
-            self.fn1 = msg.header.seq
-        elif self.img_count == 1:
-            self.img2 = cv2.resize(img, small_size)
-            self.fn2 = msg.header.seq
-            self.have_img = True
-        self.img_count += 1
+        img = cv2.resize(img, small_size)
+        self.cur_imgs.append(img)
+        self.cur_frame = msg.header.seq
+        if len(self.cur_imgs) == nimgs:
+            self.have_imgs = True
         self.tlock.release()
 
     def retrieve_image(self):
         self.tlock.acquire(True)
-        rval = (self.fn1, self.img1, self.img2)
-        self.img1 = self.img2
-        self.fn1 = self.fn2 
-        self.img_count = 1
-        self.have_img = False
+        rval = (self.cur_frame, list(self.cur_imgs))
+        self.cur_imgs.pop(0)
+        self.have_imgs = False
         self.tlock.release()
         return rval
-
-    def have_image(self):
-        return self.have_img
 
 def send_move(pub, action, action_src, frame):
     move_msg = DoobotActionArchive()
@@ -155,7 +151,7 @@ def softmax(v):
 def main():
     # Ros init, setup image msg thread
     rospy.init_node("tfplay", anonymous = True)
-    tfh = tf_handler("/caffe/ros/src/implay/scripts/snapshots/net1i")
+    tfh = tf_handler("/caffe/ros/src/implay/scripts/snapshots/net2a")
     ih = image_handler()
     pub = rospy.Publisher('implay/DoobotActionArchive', DoobotActionArchive, queue_size = 1)
     ctl_pub = rospy.Publisher('game/PlayCtl', PlayCtl, queue_size = 1)
@@ -166,9 +162,9 @@ def main():
     send_play_ctl(ctl_pub, tf_state_online)
     eps = 0.2
     while not rospy.is_shutdown():
-        if ih.have_img:
-            fn, img1, img2 = ih.retrieve_image()
-            actions = tfh.process_imgs(fn, img1, img2)
+        if ih.have_imgs:
+            frame, imgs = ih.retrieve_image()
+            actions = tfh.process_imgs(imgs)
             dist = softmax(actions) 
             # pdist = [round(v*100, 1) for v in dist]
             # print "tfplay: dist", pdist
@@ -178,7 +174,7 @@ def main():
             else:
                 action = np.random.choice(len(dist), 1, p=dist)[0]
                 action_src = 2
-            send_move(pub, action, action_src, fn)
+            send_move(pub, action, action_src, frame)
         if tfh.time_to_train:
             send_play_ctl(ctl_pub, tf_state_training)
             tfh.train()
