@@ -1,2 +1,2 @@
-model_checkpoint_path: "/caffe/ros/src/implay/scripts/snapshots/net2a"
-all_model_checkpoint_paths: "/caffe/ros/src/implay/scripts/snapshots/net2a"
+model_checkpoint_path: "net2a"
+all_model_checkpoint_paths: "net2a"
