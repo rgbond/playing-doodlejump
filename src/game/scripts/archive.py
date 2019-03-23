@@ -132,12 +132,12 @@ class image_handler(object):
         letters = self.img[225:249, 146:180]
         tot1 = grass1.sum()
         tot2 = grass2.sum()
-        tot3 = abs(letters.sum() // 1000 - 275)
+        tot3 = abs(letters.sum() // 1000 - 270)
         c1 = tot1 < 10000
         c2 = tot2 < 10000
         c3 = tot3 < 10
         if (c1 or c2) and not c3:
-            print "tot3:", tot3
+            print "c3?:", letters.sum() // 1000
         self.at_end = c3 and (c1 or c2)
 
     def is_end(self):
@@ -203,6 +203,7 @@ class global_state(object):
         self.imwrite_cache = []
         self.tlock = threading.Lock()
         self.supress_keys = False
+        self.shutup = 0
         self.last_train_state = -1 # unknown
         self.training_running = False
         self.play_ctl_msg_received = False
@@ -243,6 +244,7 @@ class global_state(object):
             print action
             self.send_action(action)
             self.cdb.update_action(action, frame//self.skip)
+            self.shutup = 5
         elif action == start_recording:
             # self.send_action(actions['start'], enable=enables['enable'])
             self.rec = True
@@ -269,7 +271,9 @@ class global_state(object):
         self.cdb.update_score(score, frame//self.skip)
 
     def save_implay_action(self, action, frame):
-        if not self.supress_keys:
+        if self.shutup > 0:
+            self.shutup -= 1
+        elif not self.supress_keys:
             self.send_action(action)
             self.cdb.update_action(action, frame//self.skip)
 

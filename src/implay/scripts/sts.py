@@ -9,23 +9,22 @@ def select_training_set(nimgs):
     fdb = db("/caffe/ros/db/frames.db", False)
     training_set = []
     new_rollouts = fdb.list_used_rollouts(0)
-    new_rollouts = [v[0] for v in new_rollouts]
+    new_rollouts = [r[0] for r in new_rollouts]
     nlen = len(new_rollouts)
-    # Find the 30 highest scoring old rollouts
+    # Find old rollouts that score higher than 2000
     old_rollouts = fdb.get_max_score_rollout()
-    scores = [v[0] for v in old_rollouts]
     old_rollouts.sort(reverse=True)
-    old_rollouts = [v[1] for v in old_rollouts]
-    old_rollouts = old_rollouts[:30]
-    shuffle(old_rollouts)
+    scores = [s for s, r in old_rollouts]
+    best_rollouts = [r for s, r in old_rollouts if s > 2000]
     if nlen != 0:
         # If we have new rollouts mix in three times as many old
-        src_set = new_rollouts + old_rollouts[:nlen*3]
+        old = np.random.choice(best_rollouts, nlen*3, replace=False).tolist()
+        src_set = new_rollouts + old
         fdb.update_rollout_rec_used()
         fdb.commit()
     else:
         # Otherwise just use 4 of them
-        src_set = old_rollouts[:4]
+        src_set = np.random.choice(best_rollouts, 4, replace=False).tolist()
     print "sts: src_set", src_set
     print "sts: avg max score", round(np.mean(scores))
     with open("maxlog.txt", "a") as maxlog:

@@ -160,7 +160,7 @@ def main():
     rospy.Subscriber("game/PlayCtl", PlayCtl, play_ctl_callback, (tfh, ))
     tfh.system_up()
     send_play_ctl(ctl_pub, tf_state_online)
-    eps = 0.2
+    eps = 0.5
     while not rospy.is_shutdown():
         if ih.have_imgs:
             frame, imgs = ih.retrieve_image()
